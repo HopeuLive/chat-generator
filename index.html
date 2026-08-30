@@ -29,7 +29,6 @@
             align-items: flex-start;
         }
 
-        /* 手机模拟器 */
         .phone-frame {
             width: 375px;
             height: 667px;
@@ -56,16 +55,6 @@
             color: #000;
         }
 
-        .phone-header .back-btn {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #07c160;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
         .chat-area {
             height: calc(100% - 50px);
             overflow-y: auto;
@@ -76,12 +65,6 @@
         .message {
             display: flex;
             margin-bottom: 20px;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.received {
@@ -114,7 +97,6 @@
 
         .message-content {
             max-width: 60%;
-            position: relative;
         }
 
         .bubble {
@@ -123,7 +105,6 @@
             font-size: 16px;
             line-height: 1.4;
             word-wrap: break-word;
-            position: relative;
         }
 
         .received .bubble {
@@ -143,7 +124,6 @@
             text-align: center;
         }
 
-        /* 图片消息样式 */
         .message-image {
             max-width: 200px;
             border-radius: 5px;
@@ -156,7 +136,6 @@
             display: block;
         }
 
-        /* 控制面板 */
         .control-panel {
             width: 400px;
             background: white;
@@ -193,14 +172,6 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #07c160;
         }
 
         .form-group textarea {
@@ -241,17 +212,9 @@
             color: white;
         }
 
-        .btn-danger:hover {
-            background: #f04545;
-        }
-
         .btn-secondary {
             background: #f0f0f0;
             color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
         }
 
         .message-list {
@@ -272,149 +235,54 @@
             font-size: 14px;
         }
 
-        .message-item:last-child {
-            border-bottom: none;
-        }
-
         .delete-btn {
             color: #f56c6c;
             cursor: pointer;
             font-size: 18px;
-            padding: 0 5px;
         }
 
-        .delete-btn:hover {
-            color: #f04545;
-        }
-
-        /* 头像上传样式 */
-        .avatar-upload-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .avatar-upload-btn {
+        .upload-btn {
             padding: 10px 15px;
             background: #f0f0f0;
             border: 1px solid #ddd;
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.3s;
+            width: 100%;
+            text-align: center;
         }
 
-        .avatar-upload-btn:hover {
+        .upload-btn:hover {
             background: #e0e0e0;
         }
 
-        .avatar-preview {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            background: #f9f9f9;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .avatar-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .avatar-remove-btn {
-            padding: 5px 10px;
-            background: #f56c6c;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            display: none;
-        }
-
-        .avatar-remove-btn:hover {
-            background: #f04545;
-        }
-
-        /* 图片上传样式 */
-        .upload-area {
-            border: 2px dashed #ddd;
-            border-radius: 5px;
-            padding: 20px;
+        .preview-container {
+            margin-top: 10px;
             text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #fafafa;
         }
 
-        .upload-area:hover {
-            border-color: #07c160;
-            background: #f0f9f4;
-        }
-
-        .upload-area.has-image {
-            border-color: #07c160;
-            background: #f0f9f4;
-        }
-
-        .upload-preview {
+        .preview-container img {
             max-width: 200px;
             max-height: 200px;
-            margin: 10px auto;
             border-radius: 5px;
-            display: none;
-        }
-
-        .upload-preview.show {
-            display: block;
-        }
-
-        @media (max-width: 850px) {
-            .container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .control-panel {
-                width: 100%;
-                max-width: 400px;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 手机模拟器 -->
         <div class="phone-frame">
             <div class="phone-header">
-                <span class="back-btn">←</span>
                 <span class="title" id="chatTitle">微信聊天</span>
             </div>
-            <div class="chat-area" id="chatArea">
-                <!-- 消息会动态添加到这里 -->
-            </div>
+            <div class="chat-area" id="chatArea"></div>
         </div>
 
-        <!-- 控制面板 -->
         <div class="control-panel">
             <h2>聊天记录生成器</h2>
             
             <div class="form-group">
-                <label>聊天标题</label>
-                <input type="text" id="chatTitleInput" value="微信聊天" placeholder="输入聊天标题">
-            </div>
-
-            <div class="form-group">
                 <label>消息类型</label>
-                <select id="messageType" onchange="toggleMessageInput()">
+                <select id="messageType" onchange="toggleInputType()">
                     <option value="text">文本消息</option>
                     <option value="image">图片消息</option>
                 </select>
@@ -428,49 +296,31 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label>头像</label>
-                <div class="avatar-upload-group">
-                    <div class="avatar-preview" id="avatarPreview">😊</div>
-                    <button class="avatar-upload-btn" onclick="document.getElementById('avatarFileInput').click()">
-                        📁 上传头像
-                    </button>
-                    <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
-                    <button class="avatar-remove-btn" id="avatarRemoveBtn" onclick="removeAvatar()">移除</button>
-                </div>
-                <input type="text" id="avatarInput" placeholder="或输入emoji/图片URL" style="margin-top:10px;">
-            </div>
-
-            <div class="form-group">
-                <label>昵称</label>
-                <input type="text" id="nameInput" placeholder="输入昵称">
-            </div>
-
-            <!-- 文本消息输入 -->
-            <div class="form-group" id="textInputGroup">
+            <div class="form-group" id="textInputDiv">
                 <label>消息内容</label>
                 <textarea id="messageInput" placeholder="输入消息内容..."></textarea>
             </div>
 
-            <!-- 图片消息输入 -->
-            <div class="form-group" id="imageInputGroup" style="display:none;">
-                <label>上传图片</label>
-                <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageFileInput').click()">
-                    <div>📁 点击上传图片</div>
-                    <img id="imagePreview" class="upload-preview" alt="预览">
-                    <input type="file" id="imageFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+            <div class="form-group" id="imageInputDiv" style="display:none;">
+                <label>选择图片</label>
+                <input type="file" id="imageFile" accept="image/*" onchange="previewImage()" style="display:none;">
+                <button class="upload-btn" onclick="document.getElementById('imageFile').click()">
+                    📁 点击选择图片
+                </button>
+                <div class="preview-container" id="previewContainer" style="display:none;">
+                    <img id="imagePreview" alt="预览">
+                    <button class="btn-danger" onclick="clearImage()" style="margin-top:10px; padding:5px 10px; border:none; border-radius:3px; cursor:pointer;">移除图片</button>
                 </div>
-                <button class="btn btn-danger" onclick="removeImage()" style="margin-top:10px; display:none;" id="removeImageBtn">移除图片</button>
             </div>
 
             <div class="form-group">
                 <label>时间</label>
-                <input type="text" id="timeInput" placeholder="例如：14:30">
+                <input type="text" id="timeInput">
             </div>
 
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="addMessage()">添加消息</button>
-                <button class="btn btn-secondary" onclick="clearAll()">清空所有</button>
+                <button class="btn btn-danger" onclick="clearAll()">清空所有</button>
             </div>
 
             <div class="btn-group">
@@ -479,8 +329,7 @@
             </div>
 
             <div class="message-list" id="messageList">
-                <h3 style="margin-bottom: 10px; font-size: 16px;">消息列表</h3>
-                <!-- 消息列表会动态显示 -->
+                <h3>消息列表</h3>
             </div>
         </div>
     </div>
@@ -489,264 +338,160 @@
     <script>
         let messages = [];
         let messageId = 0;
-        let uploadedImageData = null; // 存储上传的图片数据
-        let uploadedAvatarData = null; // 存储上传的头像数据
+        let currentImageData = null;
 
-        // 初始化时间
+        // 初始化
         function getCurrentTime() {
             const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            return `${hours}:${minutes}`;
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         }
 
-        // 设置默认时间
         document.getElementById('timeInput').value = getCurrentTime();
 
-        // 切换消息输入类型
-        function toggleMessageInput() {
+        // 切换输入类型
+        function toggleInputType() {
             const type = document.getElementById('messageType').value;
-            const textGroup = document.getElementById('textInputGroup');
-            const imageGroup = document.getElementById('imageInputGroup');
-            
-            if (type === 'text') {
-                textGroup.style.display = 'block';
-                imageGroup.style.display = 'none';
-            } else if (type === 'image') {
-                textGroup.style.display = 'none';
-                imageGroup.style.display = 'block';
-            }
+            document.getElementById('textInputDiv').style.display = type === 'text' ? 'block' : 'none';
+            document.getElementById('imageInputDiv').style.display = type === 'image' ? 'block' : 'none';
         }
 
-        // 处理头像上传
-        function handleAvatarUpload(event) {
-            const file = event.target.files[0];
+        // 预览图片
+        function previewImage() {
+            const file = document.getElementById('imageFile').files[0];
             if (!file) return;
-            
-            // 检查文件类型
-            if (!file.type.startsWith('image/')) {
-                alert('请选择图片文件');
-                return;
-            }
-            
-            // 检查文件大小（限制2MB）
-            if (file.size > 2 * 1024 * 1024) {
-                alert('头像大小不能超过2MB');
-                return;
-            }
-            
+
             const reader = new FileReader();
             reader.onload = function(e) {
-                uploadedAvatarData = e.target.result;
-                
-                // 显示预览
-                const preview = document.getElementById('avatarPreview');
-                preview.innerHTML = `<img src="${uploadedAvatarData}" alt="头像">`;
-                
-                // 清空URL输入框
-                document.getElementById('avatarInput').value = '';
-                
-                // 显示移除按钮
-                document.getElementById('avatarRemoveBtn').style.display = 'block';
+                currentImageData = e.target.result;
+                document.getElementById('imagePreview').src = currentImageData;
+                document.getElementById('previewContainer').style.display = 'block';
             };
             reader.readAsDataURL(file);
         }
 
-        // 移除头像
-        function removeAvatar() {
-            uploadedAvatarData = null;
-            document.getElementById('avatarPreview').innerHTML = '😊';
-            document.getElementById('avatarRemoveBtn').style.display = 'none';
-            document.getElementById('avatarFileInput').value = '';
-        }
-
-        // 处理图片上传
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // 检查文件类型
-            if (!file.type.startsWith('image/')) {
-                alert('请选择图片文件');
-                return;
-            }
-            
-            // 检查文件大小（限制5MB）
-            if (file.size > 5 * 1024 * 1024) {
-                alert('图片大小不能超过5MB');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedImageData = e.target.result;
-                
-                // 显示预览
-                const preview = document.getElementById('imagePreview');
-                preview.src = uploadedImageData;
-                preview.classList.add('show');
-                
-                // 更新上传区域样式
-                document.getElementById('uploadArea').classList.add('has-image');
-                document.getElementById('removeImageBtn').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // 移除图片
-        function removeImage() {
-            uploadedImageData = null;
-            document.getElementById('imagePreview').src = '';
-            document.getElementById('imagePreview').classList.remove('show');
-            document.getElementById('uploadArea').classList.remove('has-image');
-            document.getElementById('removeImageBtn').style.display = 'none';
-            document.getElementById('imageFileInput').value = '';
+        // 清除图片
+        function clearImage() {
+            currentImageData = null;
+            document.getElementById('imageFile').value = '';
+            document.getElementById('previewContainer').style.display = 'none';
         }
 
         // 添加消息
         function addMessage() {
+            const type = document.getElementById('messageType').value;
             const sender = document.getElementById('senderSelect').value;
-            const name = document.getElementById('nameInput').value || (sender === 'me' ? '我' : '对方');
             const time = document.getElementById('timeInput').value || getCurrentTime();
-            const messageType = document.getElementById('messageType').value;
-            
-            // 获取头像
-            let avatar;
-            if (uploadedAvatarData) {
-                avatar = uploadedAvatarData;  // 使用上传的头像
-            } else {
-                avatar = document.getElementById('avatarInput').value || (sender === 'me' ? '😊' : '👤');
-            }
             
             let content = '';
             let imageData = null;
-            
-            if (messageType === 'text') {
+
+            if (type === 'text') {
                 content = document.getElementById('messageInput').value.trim();
                 if (!content) {
                     alert('请输入消息内容');
                     return;
                 }
-            } else if (messageType === 'image') {
-                if (!uploadedImageData) {
-                    alert('请先上传图片');
+            } else if (type === 'image') {
+                if (!currentImageData) {
+                    alert('请先选择图片');
                     return;
                 }
                 content = '[图片]';
-                imageData = uploadedImageData;
+                imageData = currentImageData;
             }
 
             const message = {
                 id: messageId++,
                 sender: sender,
-                avatar: avatar,
-                name: name,
+                avatar: sender === 'me' ? '😊' : '👤',
+                name: sender === 'me' ? '我' : '对方',
                 content: content,
                 time: time,
-                type: messageType,
+                type: type,
                 imageData: imageData
             };
 
             messages.push(message);
             renderChat();
             renderMessageList();
-            
+
             // 清空输入
-            if (messageType === 'text') {
+            if (type === 'text') {
                 document.getElementById('messageInput').value = '';
-            } else if (messageType === 'image') {
-                removeImage();
+            } else {
+                clearImage();
             }
-            
             document.getElementById('timeInput').value = getCurrentTime();
-            
-            // 滚动到底部
-            const chatArea = document.getElementById('chatArea');
-            chatArea.scrollTop = chatArea.scrollHeight;
         }
 
-        // 渲染聊天记录
+        // 渲染聊天
         function renderChat() {
             const chatArea = document.getElementById('chatArea');
-            const chatTitle = document.getElementById('chatTitle');
-            chatTitle.textContent = document.getElementById('chatTitleInput').value || '微信聊天';
-            
             chatArea.innerHTML = '';
-            
+
             messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${msg.sender === 'me' ? 'sent' : 'received'}`;
-                
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `message ${msg.sender === 'me' ? 'sent' : 'received'}`;
+
                 const avatarDiv = document.createElement('div');
                 avatarDiv.className = 'avatar';
-                if (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:image')) {
-                    avatarDiv.innerHTML = `<img src="${msg.avatar}" alt="avatar">`;
-                } else {
-                    avatarDiv.textContent = msg.avatar;
-                }
-                
+                avatarDiv.textContent = msg.avatar;
+
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'message-content';
-                
+
                 const bubble = document.createElement('div');
                 bubble.className = 'bubble';
-                
+
                 if (msg.type === 'image' && msg.imageData) {
-                    // 图片消息
                     bubble.innerHTML = `<div class="message-image"><img src="${msg.imageData}" alt="图片"></div>`;
                 } else {
-                    // 文本消息
                     bubble.textContent = msg.content;
                 }
-                
+
                 const timeDiv = document.createElement('div');
                 timeDiv.className = 'message-time';
                 timeDiv.textContent = `${msg.name} ${msg.time}`;
-                
+
                 contentDiv.appendChild(bubble);
                 contentDiv.appendChild(timeDiv);
-                
+
                 if (msg.sender === 'me') {
-                    messageDiv.appendChild(contentDiv);
-                    messageDiv.appendChild(avatarDiv);
+                    msgDiv.appendChild(contentDiv);
+                    msgDiv.appendChild(avatarDiv);
                 } else {
-                    messageDiv.appendChild(avatarDiv);
-                    messageDiv.appendChild(contentDiv);
+                    msgDiv.appendChild(avatarDiv);
+                    msgDiv.appendChild(contentDiv);
                 }
-                
-                chatArea.appendChild(messageDiv);
+
+                chatArea.appendChild(msgDiv);
             });
+
+            chatArea.scrollTop = chatArea.scrollHeight;
         }
 
         // 渲染消息列表
         function renderMessageList() {
-            const messageList = document.getElementById('messageList');
-            const listHtml = messages.map(msg => {
-                let displayContent = msg.content;
-                if (msg.type === 'image') {
-                    displayContent = '📷 图片消息';
-                }
-                return `
-                    <div class="message-item">
-                        <span>${msg.sender === 'me' ? '我' : '对方'}: ${displayContent.substring(0, 20)}${displayContent.length > 20 ? '...' : ''}</span>
-                        <span class="delete-btn" onclick="deleteMessage(${msg.id})">×</span>
-                    </div>
-                `;
-            }).join('');
-            
-            messageList.innerHTML = '<h3 style="margin-bottom: 10px; font-size: 16px;">消息列表</h3>' + listHtml;
+            const list = document.getElementById('messageList');
+            const html = messages.map(msg => `
+                <div class="message-item">
+                    <span>${msg.name}: ${msg.type === 'image' ? '📷 图片' : msg.content}</span>
+                    <span class="delete-btn" onclick="deleteMessage(${msg.id})">×</span>
+                </div>
+            `).join('');
+            list.innerHTML = '<h3>消息列表</h3>' + html;
         }
 
         // 删除消息
         function deleteMessage(id) {
-            messages = messages.filter(msg => msg.id !== id);
+            messages = messages.filter(m => m.id !== id);
             renderChat();
             renderMessageList();
         }
 
-        // 清空所有消息
+        // 清空
         function clearAll() {
-            if (confirm('确定要清空所有消息吗？')) {
+            if (confirm('确定清空所有消息？')) {
                 messages = [];
                 renderChat();
                 renderMessageList();
@@ -755,95 +500,26 @@
 
         // 导出截图
         function exportChat() {
-            const phoneFrame = document.querySelector('.phone-frame');
-            html2canvas(phoneFrame, {
+            html2canvas(document.querySelector('.phone-frame'), {
                 backgroundColor: '#ffffff',
-                scale: 2,
-                useCORS: true
+                scale: 2
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = '聊天记录.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-            }).catch(err => {
-                console.error('导出失败:', err);
-                alert('导出失败，请检查控制台错误信息');
             });
         }
 
         // 加载示例
         function loadTemplate() {
             messages = [
-                {
-                    id: messageId++,
-                    sender: 'other',
-                    avatar: '👤',
-                    name: '张三',
-                    content: '在吗？',
-                    time: '09:30',
-                    type: 'text',
-                    imageData: null
-                },
-                {
-                    id: messageId++,
-                    sender: 'me',
-                    avatar: '😊',
-                    name: '我',
-                    content: '在的，怎么了？',
-                    time: '09:31',
-                    type: 'text',
-                    imageData: null
-                },
-                {
-                    id: messageId++,
-                    sender: 'other',
-                    avatar: '👤',
-                    name: '张三',
-                    content: '明天有空吗？一起吃饭',
-                    time: '09:32',
-                    type: 'text',
-                    imageData: null
-                },
-                {
-                    id: messageId++,
-                    sender: 'me',
-                    avatar: '😊',
-                    name: '我',
-                    content: '好的，没问题！',
-                    time: '09:33',
-                    type: 'text',
-                    imageData: null
-                }
+                { id: messageId++, sender: 'other', avatar: '👤', name: '张三', content: '在吗？', time: '09:30', type: 'text', imageData: null },
+                { id: messageId++, sender: 'me', avatar: '😊', name: '我', content: '在的', time: '09:31', type: 'text', imageData: null }
             ];
-            
             renderChat();
             renderMessageList();
         }
-
-        // 监听标题输入
-        document.getElementById('chatTitleInput').addEventListener('input', function() {
-            document.getElementById('chatTitle').textContent = this.value || '微信聊天';
-        });
-
-        // 监听头像输入
-        document.getElementById('avatarInput').addEventListener('input', function() {
-            if (this.value && !uploadedAvatarData) {
-                const preview = document.getElementById('avatarPreview');
-                if (this.value.startsWith('http')) {
-                    preview.innerHTML = `<img src="${this.value}" alt="头像">`;
-                } else {
-                    preview.textContent = this.value;
-                }
-            }
-        });
-
-        // 回车快捷添加（仅文本消息）
-        document.getElementById('messageInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                addMessage();
-            }
-        });
 
         // 初始渲染
         renderChat();
