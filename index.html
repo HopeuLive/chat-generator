@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天记录生成器 Pro - Chat Generator Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 手机模拟器 -->
+        <div class="phone-frame" id="phoneFrame">
+            <div class="status-bar">
+                <span class="time">12:00</span>
+                <span class="icons">📶 📶 🔋</span>
+            </div>
+            <div class="phone-header">
+                <span class="back-btn">←</span>
+                <span class="title" id="chatTitle">微信聊天</span>
+                <span class="more-btn" onclick="showMoreMenu()">⋯</span>
+            </div>
+            <div class="chat-area" id="chatArea">
+                <!-- 消息动态渲染 -->
+            </div>
+            <div class="input-bar">
+                <input type="text" id="quickInput" placeholder="快速输入消息..." onkeydown="quickAdd(event)">
+                <button onclick="quickAddFromButton()">发送</button>
+            </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('basic')">基础设置</button>
+                <button class="tab" onclick="switchTab('advanced')">高级功能</button>
+                <button class="tab" onclick="switchTab('themes')">主题</button>
+            </div>
+
+            <!-- 基础设置 -->
+            <div class="tab-content active" id="basicTab">
+                <h2>🎨 基础设置</h2>
+                
+                <div class="form-group">
+                    <label>聊天标题</label>
+                    <input type="text" id="chatTitleInput" value="微信聊天" placeholder="输入聊天标题">
+                </div>
+
+                <div class="form-group">
+                    <label>发送者</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="sender" value="me" checked>
+                            <span>我（右侧）</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="sender" value="other">
+                            <span>对方（左侧）</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>头像</label>
+                    <div class="avatar-input-group">
+                        <input type="text" id="avatarInput" placeholder="😊 或图片URL">
+                        <div class="avatar-preview" id="avatarPreview">😊</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>昵称</label>
+                    <input type="text" id="nameInput" placeholder="输入昵称">
+                </div>
+
+                <div class="form-group">
+                    <label>消息类型</label>
+                    <select id="messageType">
+                        <option value="text">文本消息</option>
+                        <option value="image">图片消息</option>
+                        <option value="voice">语音消息</option>
+                        <option value="video">视频消息</option>
+                        <option value="file">文件消息</option>
+                        <option value="transfer">转账消息</option>
+                        <option value="redpacket">红包消息</option>
+                        <option value="location">位置消息</option>
+                        <option value="contact">联系人名片</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="textInputGroup">
+                    <label>消息内容</label>
+                    <textarea id="messageInput" placeholder="输入消息内容...（Enter发送，Shift+Enter换行）"></textarea>
+                </div>
+
+                <div class="form-group" id="imageInputGroup" style="display:none;">
+                    <label>图片URL</label>
+                    <input type="text" id="imageUrlInput" placeholder="https://example.com/image.jpg">
+                </div>
+
+                <div class="form-group" id="fileInputGroup" style="display:none;">
+                    <label>文件名</label>
+                    <input type="text" id="fileNameInput" placeholder="example.pdf">
+                    <label>文件大小</label>
+                    <input type="text" id="fileSizeInput" placeholder="2.5MB">
+                </div>
+
+                <div class="form-group" id="transferInputGroup" style="display:none;">
+                    <label>转账金额</label>
+                    <input type="number" id="transferAmountInput" placeholder="100.00">
+                    <label>转账说明</label>
+                    <input type="text" id="transferNoteInput" placeholder="转账说明">
+                </div>
+
+                <div class="form-group" id="locationInputGroup" style="display:none;">
+                    <label>位置名称</label>
+                    <input type="text" id="locationNameInput" placeholder="当前位置">
+                    <label>详细地址</label>
+                    <input type="text" id="locationAddressInput" placeholder="详细地址">
+                </div>
+
+                <div class="form-group">
+                    <label>时间</label>
+                    <input type="text" id="timeInput" placeholder="例如：14:30">
+                    <button class="btn-time" onclick="setCurrentTime()">当前时间</button>
+                </div>
+
+                <div class="form-group">
+                    <label>消息状态</label>
+                    <select id="messageStatus">
+                        <option value="sent">已发送</option>
+                        <option value="delivered">已送达</option>
+                        <option value="read">已读</option>
+                        <option value="failed">发送失败</option>
+                    </select>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="addMessage()">➕ 添加消息</button>
+                    <button class="btn btn-danger" onclick="clearAll()">🗑️ 清空</button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="exportChat()">📸 导出截图</button>
+                    <button class="btn btn-secondary" onclick="loadTemplate()">📝 加载示例</button>
+                </div>
+            </div>
+
+            <!-- 高级功能 -->
+            <div class="tab-content" id="advancedTab">
+                <h2>🚀 高级功能</h2>
+                
+                <div class="form-group">
+                    <label>批量导入对话</label>
+                    <textarea id="batchInput" placeholder="格式：发送者|内容|时间&#10;例如：&#10;我|你好|09:30&#10;对方|你好|09:31"></textarea>
+                    <button class="btn btn-secondary" onclick="batchImport()" style="margin-top:10px;">📥 批量导入</button>
+                </div>
+
+                <div class="form-group">
+                    <label>自动生成对话</label>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="generateConversation('greeting')">问候对话</button>
+                        <button class="btn btn-secondary" onclick="generateConversation('business')">商务对话</button>
+                        <button class="btn btn-secondary" onclick="generateConversation('casual')">闲聊对话</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>保存/加载</label>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="saveToLocal()">💾 保存到本地</button>
+                        <button class="btn btn-secondary" onclick="loadFromLocal()">📂 从本地加载</button>
+                        <button class="btn btn-secondary" onclick="exportJSON()">📄 导出JSON</button>
+                        <button class="btn btn-secondary" onclick="importJSON()">📥 导入JSON</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>消息排序</label>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="sortByTime()">按时间排序</button>
+                        <button class="btn btn-secondary" onclick="reverseMessages()">反转顺序</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>批量操作</label>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="duplicateLast()">复制最后一条</button>
+                        <button class="btn btn-secondary" onclick="deleteLast()">删除最后一条</button>
+                        <button class="btn btn-secondary" onclick="markAllRead()">全部标记已读</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>消息列表管理</label>
+                    <div class="message-list" id="messageList">
+                        <h3>消息列表</h3>
+                        <!-- 动态渲染 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主题设置 -->
+            <div class="tab-content" id="themesTab">
+                <h2>🎨 主题设置</h2>
+                
+                <div class="form-group">
+                    <label>聊天主题</label>
+                    <select id="themeSelect" onchange="changeTheme()">
+                        <option value="wechat">微信风格</option>
+                        <option value="qq">QQ风格</option>
+                        <option value="dingtalk">钉钉风格</option>
+                        <option value="whatsapp">WhatsApp风格</option>
+                        <option value="telegram">Telegram风格</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>背景颜色</label>
+                    <input type="color" id="bgColor" value="#ededed" onchange="updateCustomTheme()">
+                </div>
+
+                <div class="form-group">
+                    <label>我的消息气泡颜色</label>
+                    <input type="color" id="myBubbleColor" value="#95ec69" onchange="updateCustomTheme()">
+                </div>
+
+                <div class="form-group">
+                    <label>对方消息气泡颜色</label>
+                    <input type="color" id="otherBubbleColor" value="#ffffff" onchange="updateCustomTheme()">
+                </div>
+
+                <div class="form-group">
+                    <label>字体大小</label>
+                    <input type="range" id="fontSize" min="12" max="20" value="16" onchange="updateFontSize()">
+                    <span id="fontSizeValue">16px</span>
+                </div>
+
+                <div class="form-group">
+                    <label>手机外观</label>
+                    <select id="phoneStyle" onchange="changePhoneStyle()">
+                        <option value="modern">现代风格</option>
+                        <option value="classic">经典风格</option>
+                        <option value="minimal">极简风格</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 更多菜单 -->
+    <div class="more-menu" id="moreMenu" style="display:none;">
+        <div class="menu-item" onclick="exportChat()">📸 截图</div>
+        <div class="menu-item" onclick="clearAll()">🗑️ 清空</div>
+        <div class="menu-item" onclick="loadTemplate()">📝 加载示例</div>
+        <div class="menu-item" onclick="hideMoreMenu()">关闭</div>
+    </div>
+
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none;" onchange="handleJSONImport(event)">
+    
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
