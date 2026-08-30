@@ -1,1025 +1,511 @@
-// 聊天记录生成器 Pro - 完整功能
-let messages = [];
-let messageId = 0;
-let currentTheme = 'wechat';
-
-// 主题配置
-const themes = {
-    wechat: {
-        bg: '#ededed',
-        myBubble: '#95ec69',
-        otherBubble: '#ffffff',
-        headerBg: '#ededed',
-        inputBg: '#f7f7f7'
-    },
-    qq: {
-        bg: '#f5f6fa',
-        myBubble: '#00a6ff',
-        otherBubble: '#ffffff',
-        headerBg: '#12b7f5',
-        inputBg: '#f5f6fa'
-    },
-    dingtalk: {
-        bg: '#f5f5f5',
-        myBubble: '#1890ff',
-        otherBubble: '#ffffff',
-        headerBg: '#1890ff',
-        inputBg: '#f5f5f5'
-    },
-    whatsapp: {
-        bg: '#e5ddd5',
-        myBubble: '#dcf8c6',
-        otherBubble: '#ffffff',
-        headerBg: '#075e54',
-        inputBg: '#f0f0f0'
-    },
-    telegram: {
-        bg: '#0e1621',
-        myBubble: '#2b5278',
-        otherBubble: '#182533',
-        headerBg: '#17212b',
-        inputBg: '#17212b'
-    }
-};
-
-// 初始化
-document.addEventListener('DOMContentLoaded', function() {
-    setCurrentTime();
-    renderChat();
-    renderMessageList();
-    updateStatusBar();
-    
-    // 监听标题输入
-    document.getElementById('chatTitleInput').addEventListener('input', function() {
-        document.getElementById('chatTitle').textContent = this.value || '微信聊天';
-    });
-    
-    // 回车快捷添加
-    document.getElementById('messageInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            addMessage();
-        }
-    });
-    
-    // 头像预览
-    document.getElementById('avatarInput').addEventListener('input', function() {
-        updateAvatarPreview(this.value);
-    });
-    
-    // 监听发送者切换
-    document.querySelectorAll('input[name="sender"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            updateDefaultAvatar();
-        });
-    });
-    
-    // 监听消息类型切换
-    document.getElementById('messageType').addEventListener('change', function() {
-        toggleMessageInputs(this.value);
-    });
-    
-    // 每分钟更新状态栏时间
-    setInterval(updateStatusBar, 30000);
-});
-
-// 更新状态栏时间
-function updateStatusBar() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    document.querySelector('.status-bar .time').textContent = `${hours}:${minutes}`;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-// 切换标签页
-function switchTab(tabName) {
-    // 更新标签按钮
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    // 更新内容
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    const tabMap = {
-        'basic': 'basicTab',
-        'advanced': 'advancedTab',
-        'themes': 'themesTab'
-    };
-    
-    document.getElementById(tabMap[tabName]).classList.add('active');
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
 }
 
-// 切换消息输入框
-function toggleMessageInputs(type) {
-    const groups = {
-        text: 'textInputGroup',
-        image: 'imageInputGroup',
-        file: 'fileInputGroup',
-        transfer: 'transferInputGroup',
-        location: 'locationInputGroup'
-    };
-    
-    // 隐藏所有特殊输入组
-    Object.values(groups).forEach(id => {
-        document.getElementById(id).style.display = 'none';
-    });
-    
-    // 显示对应的输入组
-    if (groups[type]) {
-        document.getElementById(groups[type]).style.display = 'block';
-    }
-    
-    // 文本和语音消息共用文本输入
-    if (type === 'text' || type === 'voice' || type === 'video' || type === 'redpacket' || type === 'contact') {
-        document.getElementById('textInputGroup').style.display = 'block';
-    }
+.container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
 }
 
-// 获取当前时间
-function getCurrentTime() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
+/* 手机模拟器 */
+.phone-frame {
+    width: 375px;
+    height: 700px;
+    background: #f5f5f5;
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    position: relative;
+    border: 12px solid #2c2c2c;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
 }
 
-// 设置当前时间
-function setCurrentTime() {
-    document.getElementById('timeInput').value = getCurrentTime();
+.status-bar {
+    background: #ededed;
+    padding: 5px 20px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #000;
 }
 
-// 更新头像预览
-function updateAvatarPreview(value) {
-    const preview = document.getElementById('avatarPreview');
-    if (value) {
-        if (value.startsWith('http')) {
-            preview.innerHTML = `<img src="${value}" alt="avatar">`;
-        } else {
-            preview.textContent = value;
-        }
-    }
+.phone-header {
+    background: #ededed;
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #d6d6d6;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-// 更新默认头像
-function updateDefaultAvatar() {
-    const sender = document.querySelector('input[name="sender"]:checked').value;
-    const avatarInput = document.getElementById('avatarInput');
-    if (!avatarInput.value || avatarInput.value === '😊' || avatarInput.value === '👤') {
-        avatarInput.value = sender === 'me' ? '😊' : '👤';
-        updateAvatarPreview(avatarInput.value);
-    }
+.phone-header .title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #000;
+    flex: 1;
 }
 
-// 添加消息
-function addMessage() {
-    const sender = document.querySelector('input[name="sender"]:checked').value;
-    const avatar = document.getElementById('avatarInput').value || (sender === 'me' ? '😊' : '👤');
-    const name = document.getElementById('nameInput').value || (sender === 'me' ? '我' : '对方');
-    const type = document.getElementById('messageType').value;
-    const time = document.getElementById('timeInput').value || getCurrentTime();
-    const status = document.getElementById('messageStatus').value;
-    
-    let content = '';
-    let messageData = {};
-    
-    switch(type) {
-        case 'text':
-        case 'voice':
-        case 'video':
-        case 'redpacket':
-            content = document.getElementById('messageInput').value.trim();
-            if (!content) {
-                alert('请输入消息内容');
-                return;
-            }
-            messageData = { text: content };
-            break;
-        case 'image':
-            content = document.getElementById('imageUrlInput').value.trim();
-            if (!content) {
-                alert('请输入图片URL');
-                return;
-            }
-            messageData = { imageUrl: content };
-            break;
-        case 'file':
-            const fileName = document.getElementById('fileNameInput').value.trim();
-            const fileSize = document.getElementById('fileSizeInput').value.trim();
-            if (!fileName) {
-                alert('请输入文件名');
-                return;
-            }
-            content = fileName;
-            messageData = { fileName: fileName, fileSize: fileSize || '未知大小' };
-            break;
-        case 'transfer':
-            const amount = document.getElementById('transferAmountInput').value;
-            const note = document.getElementById('transferNoteInput').value.trim();
-            if (!amount) {
-                alert('请输入转账金额');
-                return;
-            }
-            content = `转账¥${amount}`;
-            messageData = { amount: amount, note: note || '转账' };
-            break;
-        case 'location':
-            const locationName = document.getElementById('locationNameInput').value.trim();
-            const locationAddress = document.getElementById('locationAddressInput').value.trim();
-            if (!locationName) {
-                alert('请输入位置名称');
-                return;
-            }
-            content = locationName;
-            messageData = { name: locationName, address: locationAddress };
-            break;
-        case 'contact':
-            content = document.getElementById('messageInput').value.trim();
-            if (!content) {
-                alert('请输入联系人名称');
-                return;
-            }
-            messageData = { name: content, phone: '13800138000' };
-            break;
-    }
-    
-    const message = {
-        id: messageId++,
-        sender: sender,
-        avatar: avatar,
-        name: name,
-        content: content,
-        type: type,
-        time: time,
-        status: status,
-        data: messageData
-    };
-    
-    messages.push(message);
-    renderChat();
-    renderMessageList();
-    
-    // 清空输入
-    document.getElementById('messageInput').value = '';
-    document.getElementById('imageUrlInput').value = '';
-    document.getElementById('fileNameInput').value = '';
-    document.getElementById('fileSizeInput').value = '';
-    document.getElementById('transferAmountInput').value = '';
-    document.getElementById('transferNoteInput').value = '';
-    document.getElementById('locationNameInput').value = '';
-    document.getElementById('locationAddressInput').value = '';
-    
-    setCurrentTime();
-    
-    // 滚动到底部
-    const chatArea = document.getElementById('chatArea');
-    setTimeout(() => {
-        chatArea.scrollTop = chatArea.scrollHeight;
-    }, 100);
-    
-    // 聚焦输入框
-    document.getElementById('messageInput').focus();
+.phone-header .back-btn,
+.phone-header .more-btn {
+    cursor: pointer;
+    font-size: 18px;
+    color: #000;
+    width: 30px;
 }
 
-// 渲染聊天记录
-function renderChat() {
-    const chatArea = document.getElementById('chatArea');
-    const chatTitle = document.getElementById('chatTitle');
-    chatTitle.textContent = document.getElementById('chatTitleInput').value || '微信聊天';
-    
-    if (messages.length === 0) {
-        chatArea.innerHTML = `
-            <div style="text-align:center;padding-top:100px;color:#999;">
-                <div style="font-size:48px;margin-bottom:20px;">💬</div>
-                <p>暂无消息，请在右侧添加</p>
-            </div>
-        `;
-        return;
-    }
-    
-    chatArea.innerHTML = '';
-    
-    messages.forEach(msg => {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${msg.sender === 'me' ? 'sent' : 'received'}`;
-        
-        const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'avatar';
-        if (msg.avatar.startsWith('http')) {
-            avatarDiv.innerHTML = `<img src="${msg.avatar}" alt="avatar" onerror="this.style.display='none';this.parentElement.textContent='👤';">`;
-        } else {
-            avatarDiv.textContent = msg.avatar;
-        }
-        
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-        
-        const bubble = createBubble(msg);
-        contentDiv.appendChild(bubble);
-        
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'message-time';
-        timeDiv.textContent = `${msg.name} ${msg.time}`;
-        contentDiv.appendChild(timeDiv);
-        
-        if (msg.sender === 'me') {
-            messageDiv.appendChild(contentDiv);
-            messageDiv.appendChild(avatarDiv);
-        } else {
-            messageDiv.appendChild(avatarDiv);
-            messageDiv.appendChild(contentDiv);
-        }
-        
-        chatArea.appendChild(messageDiv);
-    });
+.chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 15px;
+    background: #ededed;
 }
 
-// 创建气泡
-function createBubble(msg) {
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    
-    switch(msg.type) {
-        case 'text':
-            bubble.textContent = msg.content;
-            break;
-        case 'image':
-            bubble.innerHTML = `<div class="message-image"><img src="${msg.data.imageUrl}" alt="图片" onerror="this.alt='图片加载失败'"></div>`;
-            break;
-        case 'voice':
-            bubble.innerHTML = `
-                <div class="message-voice">
-                    <span class="voice-icon">🎤</span>
-                    <span class="voice-duration">${Math.floor(Math.random() * 30 + 5)}''</span>
-                </div>
-            `;
-            break;
-        case 'video':
-            bubble.innerHTML = `
-                <div class="message-image">
-                    <div style="position:relative;">
-                        <div style="width:200px;height:150px;background:#333;border-radius:5px;display:flex;align-items:center;justify-content:center;color:white;font-size:40px;">▶️</div>
-                    </div>
-                </div>
-            `;
-            break;
-        case 'file':
-            bubble.innerHTML = `
-                <div class="message-file">
-                    <span class="file-icon">📄</span>
-                    <div class="file-info">
-                        <div class="file-name">${msg.data.fileName}</div>
-                        <div class="file-size">${msg.data.fileSize}</div>
-                    </div>
-                </div>
-            `;
-            break;
-        case 'transfer':
-            bubble.innerHTML = `
-                <div class="message-transfer">
-                    <div>转账</div>
-                    <div class="transfer-amount">¥${msg.data.amount}</div>
-                    <div class="transfer-note">${msg.data.note}</div>
-                </div>
-            `;
-            break;
-        case 'redpacket':
-            bubble.innerHTML = `
-                <div class="message-redpacket">
-                    <div class="redpacket-text">恭喜发财，大吉大利</div>
-                    <div style="font-size:12px;margin-top:5px;">${msg.content || '红包'}</div>
-                </div>
-            `;
-            break;
-        case 'location':
-            bubble.innerHTML = `
-                <div class="message-location">
-                    <div class="location-name">📍 ${msg.data.name}</div>
-                    <div class="location-address">${msg.data.address || '位置信息'}</div>
-                </div>
-            `;
-            break;
-        case 'contact':
-            bubble.innerHTML = `
-                <div class="message-contact">
-                    <div class="contact-avatar">${msg.data.name.charAt(0)}</div>
-                    <div class="contact-info">
-                        <div class="contact-name">${msg.data.name}</div>
-                        <div class="contact-phone">微信号：${msg.data.phone}</div>
-                    </div>
-                </div>
-            `;
-            break;
-    }
-    
-    // 添加状态标识
-    if (msg.sender === 'me' && msg.status !== 'sent') {
-        const statusSpan = document.createElement('span');
-        statusSpan.className = `message-status status-${msg.status}`;
-        statusSpan.textContent = msg.status === 'read' ? '已读' : msg.status === 'delivered' ? '已送达' : '发送失败';
-        bubble.appendChild(statusSpan);
-    }
-    
-    return bubble;
+.input-bar {
+    display: flex;
+    padding: 10px;
+    background: #f7f7f7;
+    border-top: 1px solid #ddd;
+    gap: 10px;
 }
 
-// 渲染消息列表
-function renderMessageList() {
-    const messageList = document.getElementById('messageList');
-    
-    if (messages.length === 0) {
-        messageList.innerHTML = '<h3>消息列表</h3><p style="color:#999;text-align:center;padding:20px;">暂无消息</p>';
-        return;
-    }
-    
-    const listHtml = messages.map(msg => `
-        <div class="message-item" onclick="editMessage(${msg.id})">
-            <span style="flex:1;">
-                ${msg.avatar.startsWith('http') ? '🖼️' : msg.avatar} 
-                ${msg.name}: ${msg.content.substring(0, 30)}${msg.content.length > 30 ? '...' : ''}
-            </span>
-            <span class="delete-btn" onclick="event.stopPropagation();deleteMessage(${msg.id})" title="删除">×</span>
-        </div>
-    `).join('');
-    
-    messageList.innerHTML = `<h3>消息列表 (${messages.length})</h3>` + listHtml;
+.input-bar input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
 }
 
-// 编辑消息
-function editMessage(id) {
-    const msg = messages.find(m => m.id === id);
-    if (!msg) return;
-    
-    // 填充表单
-    document.querySelector(`input[name="sender"][value="${msg.sender}"]`).checked = true;
-    document.getElementById('avatarInput').value = msg.avatar;
-    document.getElementById('nameInput').value = msg.name;
-    document.getElementById('messageInput').value = msg.content;
-    document.getElementById('timeInput').value = msg.time;
-    document.getElementById('messageType').value = msg.type;
-    document.getElementById('messageStatus').value = msg.status;
-    
-    // 删除原消息
-    messages = messages.filter(m => m.id !== id);
-    renderChat();
-    renderMessageList();
-    
-    // 切换到基础标签
-    switchTab('basic');
-    
-    alert('已加载消息到编辑区，修改后点击"添加消息"重新添加');
+.input-bar button {
+    padding: 8px 15px;
+    background: #07c160;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-// 删除消息
-function deleteMessage(id) {
-    if (confirm('确定要删除这条消息吗？')) {
-        messages = messages.filter(msg => msg.id !== id);
-        renderChat();
-        renderMessageList();
-    }
+/* 消息样式 */
+.message {
+    display: flex;
+    margin-bottom: 20px;
+    animation: fadeIn 0.3s;
 }
 
-// 清空所有消息
-function clearAll() {
-    if (messages.length === 0) {
-        alert('暂无消息可清空');
-        return;
-    }
-    
-    if (confirm('确定要清空所有消息吗？此操作不可撤销！')) {
-        messages = [];
-        renderChat();
-        renderMessageList();
-    }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-// 导出截图
-async function exportChat() {
-    if (messages.length === 0) {
-        alert('请先添加消息再导出');
-        return;
-    }
-    
-    const phoneFrame = document.getElementById('phoneFrame');
-    
-    const loadingToast = document.createElement('div');
-    loadingToast.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 20px 30px;
-        border-radius: 10px;
-        font-size: 16px;
-        z-index: 9999;
-    `;
-    loadingToast.textContent = '正在生成截图...';
-    document.body.appendChild(loadingToast);
-    
-    try {
-        const canvas = await html2canvas(phoneFrame, {
-            backgroundColor: '#ffffff',
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            allowTaint: true
-        });
-        
-        const link = document.createElement('a');
-        const timestamp = new Date().getTime();
-        link.download = `聊天记录_${timestamp}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        
-        loadingToast.textContent = '✅ 导出成功！';
-        loadingToast.style.background = 'rgba(7, 193, 96, 0.9)';
-    } catch (err) {
-        console.error('导出失败:', err);
-        loadingToast.textContent = '❌ 导出失败，请重试';
-        loadingToast.style.background = 'rgba(245, 108, 108, 0.9)';
+.message.received {
+    justify-content: flex-start;
+}
+
+.message.sent {
+    justify-content: flex-end;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    margin: 0 10px;
+    flex-shrink: 0;
+    background: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    overflow: hidden;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.message-content {
+    max-width: 60%;
+    position: relative;
+}
+
+.bubble {
+    padding: 9px 12px;
+    border-radius: 5px;
+    font-size: 16px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    position: relative;
+    display: inline-block;
+}
+
+.received .bubble {
+    background: white;
+    color: #000;
+}
+
+.sent .bubble {
+    background: #95ec69;
+    color: #000;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+    text-align: center;
+}
+
+/* 图片消息 */
+.message-image img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 5px;
+    display: block;
+}
+
+/* 被删除的红色感叹号 */
+.deleted-icon {
+    color: #f5222d;
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 5px;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+}
+
+.deleted-icon:hover::after {
+    content: '对方已删除你';
+    position: absolute;
+    bottom: -25px;
+    right: 0;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+}
+
+/* 控制面板 */
+.control-panel {
+    width: 450px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-height: 700px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #f0f0f0;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.tab {
+    flex: 1;
+    padding: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.tab.active {
+    color: #07c160;
+}
+
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #07c160;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-content h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #07c160;
+}
+
+.form-group textarea {
+    height: 80px;
+    resize: vertical;
+}
+
+.radio-group {
+    display: flex;
+    gap: 20px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+    margin-right: 5px;
+}
+
+/* 头像上传 */
+.avatar-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.avatar-upload-btn {
+    padding: 10px 15px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.avatar-upload-btn:hover {
+    background: #e0e0e0;
+}
+
+.avatar-preview {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: #f9f9f9;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 上传区域 */
+.upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: #07c160;
+    background: #f0f9f4;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 100px;
+}
+
+.btn-primary {
+    background: #07c160;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #06ad56;
+}
+
+.btn-danger {
+    background: #f56c6c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #f04545;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-time {
+    position: absolute;
+    right: 5px;
+    top: 30px;
+    background: #f0f0f0;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.message-list {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px;
+    background: #fafafa;
+}
+
+.message-list h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.message-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.message-item:last-child {
+    border-bottom: none;
+}
+
+.delete-btn {
+    color: #f56c6c;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.more-menu {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    padding: 10px;
+    z-index: 1000;
+}
+
+.menu-item {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-radius: 5px;
+}
+
+.menu-item:hover {
+    background: #f0f0f0;
+}
+
+@media (max-width: 850px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
     }
     
-    setTimeout(() => {
-        document.body.removeChild(loadingToast);
-    }, 2000);
-}
-
-// 快速添加消息
-function quickAdd(event) {
-    if (event.key === 'Enter') {
-        const input = document.getElementById('quickInput');
-        const content = input.value.trim();
-        if (content) {
-            document.getElementById('messageInput').value = content;
-            document.getElementById('senderSelect').value = 'me';
-            addMessage();
-            input.value = '';
-        }
+    .control-panel {
+        width: 100%;
+        max-width: 400px;
     }
 }
-
-function quickAddFromButton() {
-    const input = document.getElementById('quickInput');
-    const content = input.value.trim();
-    if (content) {
-        document.getElementById('messageInput').value = content;
-        document.querySelector('input[name="sender"][value="me"]').checked = true;
-        addMessage();
-        input.value = '';
-    }
-}
-
-// 批量导入
-function batchImport() {
-    const batchText = document.getElementById('batchInput').value.trim();
-    if (!batchText) {
-        alert('请输入要导入的对话');
-        return;
-    }
-    
-    const lines = batchText.split('\n');
-    let successCount = 0;
-    
-    lines.forEach(line => {
-        const parts = line.split('|');
-        if (parts.length >= 2) {
-            const sender = parts[0].trim() === '我' ? 'me' : 'other';
-            const content = parts[1].trim();
-            const time = parts[2] ? parts[2].trim() : getCurrentTime();
-            
-            if (content) {
-                const message = {
-                    id: messageId++,
-                    sender: sender,
-                    avatar: sender === 'me' ? '😊' : '👤',
-                    name: sender === 'me' ? '我' : '对方',
-                    content: content,
-                    type: 'text',
-                    time: time,
-                    status: 'sent',
-                    data: { text: content }
-                };
-                messages.push(message);
-                successCount++;
-            }
-        }
-    });
-    
-    renderChat();
-    renderMessageList();
-    
-    if (successCount > 0) {
-        alert(`成功导入 ${successCount} 条消息`);
-        document.getElementById('batchInput').value = '';
-    }
-}
-
-// 自动生成对话
-function generateConversation(type) {
-    const templates = {
-        greeting: [
-            { sender: 'other', content: '早上好！', time: '08:00' },
-            { sender: 'me', content: '早上好！今天天气不错', time: '08:01' },
-            { sender: 'other', content: '是啊，适合出去玩', time: '08:02' },
-            { sender: 'me', content: '要不要一起去公园？', time: '08:03' },
-            { sender: 'other', content: '好啊，什么时候？', time: '08:04' },
-            { sender: 'me', content: '十点怎么样？', time: '08:05' }
-        ],
-        business: [
-            { sender: 'other', content: '王总，项目进展如何？', time: '14:00' },
-            { sender: 'me', content: '李总，目前进展顺利', time: '14:05' },
-            { sender: 'other', content: '好的，下周三能交付吗？', time: '14:06' },
-            { sender: 'me', content: '没问题，保证按时交付', time: '14:07' },
-            { sender: 'other', content: '辛苦你了', time: '14:08' }
-        ],
-        casual: [
-            { sender: 'me', content: '在干嘛呢？', time: '20:00' },
-            { sender: 'other', content: '在看电影，你呢？', time: '20:01' },
-            { sender: 'me', content: '我在打游戏', time: '20:02' },
-            { sender: 'other', content: '什么游戏？', time: '20:03' },
-            { sender: 'me', content: '王者荣耀，一起吗？', time: '20:04' },
-            { sender: 'other', content: '好啊，等我一下', time: '20:05' }
-        ]
-    };
-    
-    if (messages.length > 0) {
-        if (!confirm('生成对话将添加到现有消息，继续吗？')) {
-            return;
-        }
-    }
-    
-    const template = templates[type] || templates.greeting;
-    
-    template.forEach(item => {
-        const message = {
-            id: messageId++,
-            sender: item.sender,
-            avatar: item.sender === 'me' ? '😊' : '👤',
-            name: item.sender === 'me' ? '我' : '对方',
-            content: item.content,
-            type: 'text',
-            time: item.time,
-            status: 'read',
-            data: { text: item.content }
-        };
-        messages.push(message);
-    });
-    
-    renderChat();
-    renderMessageList();
-    
-    const chatArea = document.getElementById('chatArea');
-    setTimeout(() => {
-        chatArea.scrollTop = chatArea.scrollHeight;
-    }, 100);
-}
-
-// 保存到本地
-function saveToLocal() {
-    try {
-        const data = {
-            messages: messages,
-            title: document.getElementById('chatTitleInput').value,
-            theme: currentTheme
-        };
-        localStorage.setItem('chatGeneratorData', JSON.stringify(data));
-        alert('✅ 保存成功！');
-    } catch (err) {
-        alert('❌ 保存失败：' + err.message);
-    }
-}
-
-// 从本地加载
-function loadFromLocal() {
-    try {
-        const data = localStorage.getItem('chatGeneratorData');
-        if (!data) {
-            alert('没有找到保存的数据');
-            return;
-        }
-        
-        const parsed = JSON.parse(data);
-        messages = parsed.messages || [];
-        messageId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 0;
-        
-        if (parsed.title) {
-            document.getElementById('chatTitleInput').value = parsed.title;
-            document.getElementById('chatTitle').textContent = parsed.title;
-        }
-        
-        if (parsed.theme) {
-            currentTheme = parsed.theme;
-            document.getElementById('themeSelect').value = parsed.theme;
-            changeTheme();
-        }
-        
-        renderChat();
-        renderMessageList();
-        alert('✅ 加载成功！');
-    } catch (err) {
-        alert('❌ 加载失败：' + err.message);
-    }
-}
-
-// 导出JSON
-function exportJSON() {
-    const data = {
-        messages: messages,
-        title: document.getElementById('chatTitleInput').value,
-        theme: currentTheme,
-        exportTime: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `聊天记录_${Date.now()}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-}
-
-// 导入JSON
-function importJSON() {
-    document.getElementById('jsonFileInput').click();
-}
-
-function handleJSONImport(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            messages = data.messages || [];
-            messageId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 0;
-            
-            if (data.title) {
-                document.getElementById('chatTitleInput').value = data.title;
-                document.getElementById('chatTitle').textContent = data.title;
-            }
-            
-            if (data.theme) {
-                currentTheme = data.theme;
-                document.getElementById('themeSelect').value = data.theme;
-                changeTheme();
-            }
-            
-            renderChat();
-            renderMessageList();
-            alert('✅ 导入成功！');
-        } catch (err) {
-            alert('❌ 导入失败：无效的JSON文件');
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-}
-
-// 按时间排序
-function sortByTime() {
-    messages.sort((a, b) => {
-        return a.time.localeCompare(b.time);
-    });
-    renderChat();
-    renderMessageList();
-    alert('✅ 已按时间排序');
-}
-
-// 反转消息顺序
-function reverseMessages() {
-    messages.reverse();
-    renderChat();
-    renderMessageList();
-    alert('✅ 已反转顺序');
-}
-
-// 复制最后一条消息
-function duplicateLast() {
-    if (messages.length === 0) {
-        alert('暂无消息可复制');
-        return;
-    }
-    
-    const lastMsg = messages[messages.length - 1];
-    const newMsg = { ...lastMsg, id: messageId++ };
-    messages.push(newMsg);
-    renderChat();
-    renderMessageList();
-}
-
-// 删除最后一条消息
-function deleteLast() {
-    if (messages.length === 0) {
-        alert('暂无消息可删除');
-        return;
-    }
-    
-    messages.pop();
-    renderChat();
-    renderMessageList();
-}
-
-// 全部标记已读
-function markAllRead() {
-    messages.forEach(msg => {
-        if (msg.sender === 'me') {
-            msg.status = 'read';
-        }
-    });
-    renderChat();
-    renderMessageList();
-    alert('✅ 已全部标记为已读');
-}
-
-// 加载示例
-function loadTemplate() {
-    if (messages.length > 0) {
-        if (!confirm('加载示例将覆盖当前消息，确定继续吗？')) {
-            return;
-        }
-    }
-    
-    messages = [
-        {
-            id: messageId++,
-            sender: 'other',
-            avatar: '👤',
-            name: '张三',
-            content: '在吗？',
-            type: 'text',
-            time: '09:30',
-            status: 'read',
-            data: { text: '在吗？' }
-        },
-        {
-            id: messageId++,
-            sender: 'me',
-            avatar: '😊',
-            name: '我',
-            content: '在的，怎么了？',
-            type: 'text',
-            time: '09:31',
-            status: 'read',
-            data: { text: '在的，怎么了？' }
-        },
-        {
-            id: messageId++,
-            sender: 'other',
-            avatar: '👤',
-            name: '张三',
-            content: '明天有空吗？一起吃个饭',
-            type: 'text',
-            time: '09:32',
-            status: 'read',
-            data: { text: '明天有空吗？一起吃个饭' }
-        },
-        {
-            id: messageId++,
-            sender: 'me',
-            avatar: '😊',
-            name: '我',
-            content: '好的，没问题！',
-            type: 'text',
-            time: '09:33',
-            status: 'read',
-            data: { text: '好的，没问题！' }
-        },
-        {
-            id: messageId++,
-            sender: 'other',
-            avatar: '👤',
-            name: '张三',
-            content: '那明天中午12点老地方见😊',
-            type: 'text',
-            time: '09:35',
-            status: 'read',
-            data: { text: '那明天中午12点老地方见😊' }
-        },
-        {
-            id: messageId++,
-            sender: 'me',
-            avatar: '😊',
-            name: '我',
-            content: 'OK，不见不散！',
-            type: 'text',
-            time: '09:36',
-            status: 'read',
-            data: { text: 'OK，不见不散！' }
-        }
-    ];
-    
-    renderChat();
-    renderMessageList();
-    
-    const chatArea = document.getElementById('chatArea');
-    setTimeout(() => {
-        chatArea.scrollTop = chatArea.scrollHeight;
-    }, 100);
-}
-
-// 显示更多菜单
-function showMoreMenu() {
-    const menu = document.getElementById('moreMenu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-}
-
-// 隐藏更多菜单
-function hideMoreMenu() {
-    document.getElementById('moreMenu').style.display = 'none';
-}
-
-// 切换主题
-function changeTheme() {
-    const themeName = document.getElementById('themeSelect').value;
-    currentTheme = themeName;
-    
-    if (themeName === 'custom') {
-        updateCustomTheme();
-        return;
-    }
-    
-    const theme = themes[themeName];
-    if (!theme) return;
-    
-    document.querySelector('.chat-area').style.background = theme.bg;
-    document.querySelector('.phone-header').style.background = theme.headerBg;
-    document.querySelector('.status-bar').style.background = theme.headerBg;
-    document.querySelector('.input-bar').style.background = theme.inputBg;
-    
-    // 更新气泡颜色
-    document.querySelectorAll('.sent .bubble').forEach(bubble => {
-        bubble.style.background = theme.myBubble;
-    });
-    
-    document.querySelectorAll('.received .bubble').forEach(bubble => {
-        bubble.style.background = theme.otherBubble;
-    });
-}
-
-// 更新自定义主题
-function updateCustomTheme() {
-    const bgColor = document.getElementById('bgColor').value;
-    const myBubbleColor = document.getElementById('myBubbleColor').value;
-    const otherBubbleColor = document.getElementById('otherBubbleColor').value;
-    
-    document.querySelector('.chat-area').style.background = bgColor;
-    
-    document.querySelectorAll('.sent .bubble').forEach(bubble => {
-        bubble.style.background = myBubbleColor;
-    });
-    
-    document.querySelectorAll('.received .bubble').forEach(bubble => {
-        bubble.style.background = otherBubbleColor;
-    });
-    
-    if (document.getElementById('themeSelect').value === 'custom') {
-        currentTheme = 'custom';
-    }
-}
-
-// 更新字体大小
-function updateFontSize() {
-    const fontSize = document.getElementById('fontSize').value;
-    document.getElementById('fontSizeValue').textContent = fontSize + 'px';
-    document.querySelectorAll('.bubble').forEach(bubble => {
-        bubble.style.fontSize = fontSize + 'px';
-    });
-}
-
-// 切换手机外观
-function changePhoneStyle() {
-    const style = document.getElementById('phoneStyle').value;
-    const phoneFrame = document.getElementById('phoneFrame');
-    
-    switch(style) {
-        case 'modern':
-            phoneFrame.style.borderRadius = '40px';
-            phoneFrame.style.border = '12px solid #2c2c2c';
-            break;
-        case 'classic':
-            phoneFrame.style.borderRadius = '10px';
-            phoneFrame.style.border = '4px solid #999';
-            break;
-        case 'minimal':
-            phoneFrame.style.borderRadius = '0';
-            phoneFrame.style.border = '2px solid #333';
-            break;
-    }
-}
-
-// 点击其他地方关闭更多菜单
-document.addEventListener('click', function(e) {
-    const menu = document.getElementById('moreMenu');
-    const moreBtn = document.querySelector('.more-btn');
-    
-    if (menu.style.display === 'block' && !menu.contains(e.target) && !moreBtn.contains(e.target)) {
-        menu.style.display = 'none';
-    }
-});
