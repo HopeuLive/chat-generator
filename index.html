@@ -55,6 +55,16 @@
             color: #000;
         }
 
+        .phone-header .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #07c160;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
         .chat-area {
             height: calc(100% - 50px);
             overflow-y: auto;
@@ -65,6 +75,12 @@
         .message {
             display: flex;
             margin-bottom: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.received {
@@ -97,6 +113,7 @@
 
         .message-content {
             max-width: 60%;
+            position: relative;
         }
 
         .bubble {
@@ -105,6 +122,7 @@
             font-size: 16px;
             line-height: 1.4;
             word-wrap: break-word;
+            position: relative;
         }
 
         .received .bubble {
@@ -122,18 +140,6 @@
             color: #999;
             margin-top: 4px;
             text-align: center;
-        }
-
-        .message-image {
-            max-width: 200px;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .message-image img {
-            width: 100%;
-            height: auto;
-            display: block;
         }
 
         .control-panel {
@@ -172,6 +178,14 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #07c160;
         }
 
         .form-group textarea {
@@ -212,9 +226,17 @@
             color: white;
         }
 
+        .btn-danger:hover {
+            background: #f04545;
+        }
+
         .btn-secondary {
             background: #f0f0f0;
             color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
         }
 
         .message-list {
@@ -235,36 +257,74 @@
             font-size: 14px;
         }
 
+        .message-item:last-child {
+            border-bottom: none;
+        }
+
         .delete-btn {
             color: #f56c6c;
             cursor: pointer;
             font-size: 18px;
+            padding: 0 5px;
         }
 
-        .upload-btn {
+        .delete-btn:hover {
+            color: #f04545;
+        }
+
+        /* 头像上传相关样式 */
+        .avatar-upload-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .avatar-upload-btn {
             padding: 10px 15px;
             background: #f0f0f0;
             border: 1px solid #ddd;
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            width: 100%;
-            text-align: center;
+            transition: all 0.3s;
+            white-space: nowrap;
         }
 
-        .upload-btn:hover {
+        .avatar-upload-btn:hover {
             background: #e0e0e0;
         }
 
-        .preview-container {
-            margin-top: 10px;
-            text-align: center;
+        .avatar-preview {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: #f9f9f9;
+            overflow: hidden;
+            flex-shrink: 0;
         }
 
-        .preview-container img {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 5px;
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        @media (max-width: 850px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-panel {
+                width: 100%;
+                max-width: 400px;
+            }
         }
     </style>
 </head>
@@ -272,6 +332,7 @@
     <div class="container">
         <div class="phone-frame">
             <div class="phone-header">
+                <span class="back-btn">←</span>
                 <span class="title" id="chatTitle">微信聊天</span>
             </div>
             <div class="chat-area" id="chatArea"></div>
@@ -281,11 +342,8 @@
             <h2>聊天记录生成器</h2>
             
             <div class="form-group">
-                <label>消息类型</label>
-                <select id="messageType" onchange="toggleInputType()">
-                    <option value="text">文本消息</option>
-                    <option value="image">图片消息</option>
-                </select>
+                <label>聊天标题</label>
+                <input type="text" id="chatTitleInput" value="微信聊天" placeholder="输入聊天标题">
             </div>
 
             <div class="form-group">
@@ -296,31 +354,36 @@
                 </select>
             </div>
 
-            <div class="form-group" id="textInputDiv">
+            <div class="form-group">
+                <label>头像</label>
+                <div class="avatar-upload-group">
+                    <div class="avatar-preview" id="avatarPreview">😊</div>
+                    <button type="button" class="avatar-upload-btn" onclick="document.getElementById('avatarFileInput').click()">
+                        📁 上传图片
+                    </button>
+                    <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+                </div>
+                <input type="text" id="avatarInput" placeholder="或输入emoji/图片URL" style="margin-top:10px;">
+            </div>
+
+            <div class="form-group">
+                <label>昵称</label>
+                <input type="text" id="nameInput" placeholder="输入昵称">
+            </div>
+
+            <div class="form-group">
                 <label>消息内容</label>
                 <textarea id="messageInput" placeholder="输入消息内容..."></textarea>
             </div>
 
-            <div class="form-group" id="imageInputDiv" style="display:none;">
-                <label>选择图片</label>
-                <input type="file" id="imageFile" accept="image/*" onchange="previewImage()" style="display:none;">
-                <button class="upload-btn" onclick="document.getElementById('imageFile').click()">
-                    📁 点击选择图片
-                </button>
-                <div class="preview-container" id="previewContainer" style="display:none;">
-                    <img id="imagePreview" alt="预览">
-                    <button class="btn-danger" onclick="clearImage()" style="margin-top:10px; padding:5px 10px; border:none; border-radius:3px; cursor:pointer;">移除图片</button>
-                </div>
-            </div>
-
             <div class="form-group">
                 <label>时间</label>
-                <input type="text" id="timeInput">
+                <input type="text" id="timeInput" placeholder="例如：14:30">
             </div>
 
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="addMessage()">添加消息</button>
-                <button class="btn btn-danger" onclick="clearAll()">清空所有</button>
+                <button class="btn btn-secondary" onclick="clearAll()">清空所有</button>
             </div>
 
             <div class="btn-group">
@@ -329,7 +392,7 @@
             </div>
 
             <div class="message-list" id="messageList">
-                <h3>消息列表</h3>
+                <h3 style="margin-bottom: 10px; font-size: 16px;">消息列表</h3>
             </div>
         </div>
     </div>
@@ -338,190 +401,232 @@
     <script>
         let messages = [];
         let messageId = 0;
-        let currentImageData = null;
+        let uploadedAvatarData = null; // 存储上传的头像
 
-        // 初始化
         function getCurrentTime() {
             const now = new Date();
-            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
         }
 
         document.getElementById('timeInput').value = getCurrentTime();
 
-        // 切换输入类型
-        function toggleInputType() {
-            const type = document.getElementById('messageType').value;
-            document.getElementById('textInputDiv').style.display = type === 'text' ? 'block' : 'none';
-            document.getElementById('imageInputDiv').style.display = type === 'image' ? 'block' : 'none';
-        }
-
-        // 预览图片
-        function previewImage() {
-            const file = document.getElementById('imageFile').files[0];
+        // 处理头像上传
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
             if (!file) return;
-
+            
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件');
+                return;
+            }
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('图片大小不能超过2MB');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
-                currentImageData = e.target.result;
-                document.getElementById('imagePreview').src = currentImageData;
-                document.getElementById('previewContainer').style.display = 'block';
+                uploadedAvatarData = e.target.result;
+                
+                const preview = document.getElementById('avatarPreview');
+                preview.innerHTML = `<img src="${uploadedAvatarData}" alt="头像">`;
+                
+                document.getElementById('avatarInput').value = '';
             };
             reader.readAsDataURL(file);
         }
 
-        // 清除图片
-        function clearImage() {
-            currentImageData = null;
-            document.getElementById('imageFile').value = '';
-            document.getElementById('previewContainer').style.display = 'none';
-        }
-
-        // 添加消息
         function addMessage() {
-            const type = document.getElementById('messageType').value;
             const sender = document.getElementById('senderSelect').value;
+            const name = document.getElementById('nameInput').value || (sender === 'me' ? '我' : '对方');
+            const content = document.getElementById('messageInput').value.trim();
             const time = document.getElementById('timeInput').value || getCurrentTime();
             
-            let content = '';
-            let imageData = null;
+            let avatar;
+            if (uploadedAvatarData) {
+                avatar = uploadedAvatarData;
+            } else {
+                avatar = document.getElementById('avatarInput').value || (sender === 'me' ? '😊' : '👤');
+            }
 
-            if (type === 'text') {
-                content = document.getElementById('messageInput').value.trim();
-                if (!content) {
-                    alert('请输入消息内容');
-                    return;
-                }
-            } else if (type === 'image') {
-                if (!currentImageData) {
-                    alert('请先选择图片');
-                    return;
-                }
-                content = '[图片]';
-                imageData = currentImageData;
+            if (!content) {
+                alert('请输入消息内容');
+                return;
             }
 
             const message = {
                 id: messageId++,
                 sender: sender,
-                avatar: sender === 'me' ? '😊' : '👤',
-                name: sender === 'me' ? '我' : '对方',
+                avatar: avatar,
+                name: name,
                 content: content,
-                time: time,
-                type: type,
-                imageData: imageData
+                time: time
             };
 
             messages.push(message);
             renderChat();
             renderMessageList();
-
-            // 清空输入
-            if (type === 'text') {
-                document.getElementById('messageInput').value = '';
-            } else {
-                clearImage();
-            }
+            
+            document.getElementById('messageInput').value = '';
             document.getElementById('timeInput').value = getCurrentTime();
-        }
-
-        // 渲染聊天
-        function renderChat() {
+            
             const chatArea = document.getElementById('chatArea');
-            chatArea.innerHTML = '';
-
-            messages.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = `message ${msg.sender === 'me' ? 'sent' : 'received'}`;
-
-                const avatarDiv = document.createElement('div');
-                avatarDiv.className = 'avatar';
-                avatarDiv.textContent = msg.avatar;
-
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'message-content';
-
-                const bubble = document.createElement('div');
-                bubble.className = 'bubble';
-
-                if (msg.type === 'image' && msg.imageData) {
-                    bubble.innerHTML = `<div class="message-image"><img src="${msg.imageData}" alt="图片"></div>`;
-                } else {
-                    bubble.textContent = msg.content;
-                }
-
-                const timeDiv = document.createElement('div');
-                timeDiv.className = 'message-time';
-                timeDiv.textContent = `${msg.name} ${msg.time}`;
-
-                contentDiv.appendChild(bubble);
-                contentDiv.appendChild(timeDiv);
-
-                if (msg.sender === 'me') {
-                    msgDiv.appendChild(contentDiv);
-                    msgDiv.appendChild(avatarDiv);
-                } else {
-                    msgDiv.appendChild(avatarDiv);
-                    msgDiv.appendChild(contentDiv);
-                }
-
-                chatArea.appendChild(msgDiv);
-            });
-
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
-        // 渲染消息列表
+        function renderChat() {
+            const chatArea = document.getElementById('chatArea');
+            const chatTitle = document.getElementById('chatTitle');
+            chatTitle.textContent = document.getElementById('chatTitleInput').value || '微信聊天';
+            
+            chatArea.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.sender === 'me' ? 'sent' : 'received'}`;
+                
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'avatar';
+                if (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:image')) {
+                    avatarDiv.innerHTML = `<img src="${msg.avatar}" alt="avatar">`;
+                } else {
+                    avatarDiv.textContent = msg.avatar;
+                }
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.textContent = msg.content;
+                
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = `${msg.name} ${msg.time}`;
+                
+                contentDiv.appendChild(bubble);
+                contentDiv.appendChild(timeDiv);
+                
+                if (msg.sender === 'me') {
+                    messageDiv.appendChild(contentDiv);
+                    messageDiv.appendChild(avatarDiv);
+                } else {
+                    messageDiv.appendChild(avatarDiv);
+                    messageDiv.appendChild(contentDiv);
+                }
+                
+                chatArea.appendChild(messageDiv);
+            });
+        }
+
         function renderMessageList() {
-            const list = document.getElementById('messageList');
-            const html = messages.map(msg => `
+            const messageList = document.getElementById('messageList');
+            const listHtml = messages.map(msg => `
                 <div class="message-item">
-                    <span>${msg.name}: ${msg.type === 'image' ? '📷 图片' : msg.content}</span>
+                    <span>${msg.sender === 'me' ? '我' : '对方'}: ${msg.content.substring(0, 20)}${msg.content.length > 20 ? '...' : ''}</span>
                     <span class="delete-btn" onclick="deleteMessage(${msg.id})">×</span>
                 </div>
             `).join('');
-            list.innerHTML = '<h3>消息列表</h3>' + html;
+            
+            messageList.innerHTML = '<h3 style="margin-bottom: 10px; font-size: 16px;">消息列表</h3>' + listHtml;
         }
 
-        // 删除消息
         function deleteMessage(id) {
-            messages = messages.filter(m => m.id !== id);
+            messages = messages.filter(msg => msg.id !== id);
             renderChat();
             renderMessageList();
         }
 
-        // 清空
         function clearAll() {
-            if (confirm('确定清空所有消息？')) {
+            if (confirm('确定要清空所有消息吗？')) {
                 messages = [];
                 renderChat();
                 renderMessageList();
             }
         }
 
-        // 导出截图
         function exportChat() {
-            html2canvas(document.querySelector('.phone-frame'), {
+            const phoneFrame = document.querySelector('.phone-frame');
+            html2canvas(phoneFrame, {
                 backgroundColor: '#ffffff',
-                scale: 2
+                scale: 2,
+                useCORS: true
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = '聊天记录.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请检查控制台错误信息');
             });
         }
 
-        // 加载示例
         function loadTemplate() {
             messages = [
-                { id: messageId++, sender: 'other', avatar: '👤', name: '张三', content: '在吗？', time: '09:30', type: 'text', imageData: null },
-                { id: messageId++, sender: 'me', avatar: '😊', name: '我', content: '在的', time: '09:31', type: 'text', imageData: null }
+                {
+                    id: messageId++,
+                    sender: 'other',
+                    avatar: '👤',
+                    name: '张三',
+                    content: '在吗？',
+                    time: '09:30'
+                },
+                {
+                    id: messageId++,
+                    sender: 'me',
+                    avatar: '😊',
+                    name: '我',
+                    content: '在的，怎么了？',
+                    time: '09:31'
+                },
+                {
+                    id: messageId++,
+                    sender: 'other',
+                    avatar: '👤',
+                    name: '张三',
+                    content: '明天有空吗？一起吃饭',
+                    time: '09:32'
+                },
+                {
+                    id: messageId++,
+                    sender: 'me',
+                    avatar: '😊',
+                    name: '我',
+                    content: '好的，没问题！',
+                    time: '09:33'
+                }
             ];
+            
             renderChat();
             renderMessageList();
         }
 
-        // 初始渲染
+        document.getElementById('chatTitleInput').addEventListener('input', function() {
+            document.getElementById('chatTitle').textContent = this.value || '微信聊天';
+        });
+
+        document.getElementById('avatarInput').addEventListener('input', function() {
+            if (this.value && !uploadedAvatarData) {
+                const preview = document.getElementById('avatarPreview');
+                if (this.value.startsWith('http')) {
+                    preview.innerHTML = `<img src="${this.value}" alt="头像">`;
+                } else {
+                    preview.textContent = this.value;
+                }
+            }
+        });
+
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                addMessage();
+            }
+        });
+
         renderChat();
         renderMessageList();
     </script>
